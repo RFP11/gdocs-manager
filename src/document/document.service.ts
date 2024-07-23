@@ -60,10 +60,10 @@ export class DocumentService {
         }
     }
 
-    async getDoc(documentId:number, userId:number){
+    async getDoc(id:number, userId:number){
         const data = await this.prisma.document.findUnique({
             where: {
-                id: Number(documentId),
+                id: Number(id),
                 userId,
                 isDeleted: false
             },
@@ -71,11 +71,14 @@ export class DocumentService {
                 id: true,
                 title: true,
                 url: true,
+                isDeleted: true
             }
         })
 
         if (!data) throw new HttpException('Data Not Found', HttpStatus.NOT_FOUND)
 
+        if (data.isDeleted) throw new HttpException('Data is deleted', HttpStatus.GONE)
+        
         return {
             data,
             total: 1,
@@ -104,13 +107,31 @@ export class DocumentService {
         }
     }
 
-    update(userId:Number, data:DocumentDto){}
+    async update(id:number, data:DocumentDto){
+        try{
+            const updatedData = await this.prisma.document.update({
+                where: {id: Number(id)},
+                data: {
+                    title: data.title,
+                    url: data.url,
+                }
+            })
 
-    async delete(documentId:number){
-        const id = Number(documentId)
+            return {
+                data: 1,
+                message: "Success",
+                status: HttpStatus.OK
+            }
+        }catch(error){
+            throw new HttpException('Something went wrong', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+       
+    }
+
+    async delete(id:number){
         try{
             const data = await this.prisma.document.update({
-                where: {id},
+                where: {id: Number(id)},
                 data: {
                     isDeleted: true,
                     deletedAt: new Date()
@@ -123,7 +144,32 @@ export class DocumentService {
 
             return {
                 data,
-                message: "Success",
+                message: "Data deleted",
+                status: HttpStatus.OK,
+            }
+        }catch(error){
+            console.log(error)
+            throw new HttpException('Something Wrong', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    async undelete(id:number){
+        try{
+            const data = await this.prisma.document.update({
+                where: {id},
+                data: {
+                    isDeleted: false,
+                    deletedAt: null
+                },
+                select: {
+                    id: true,
+                    isDeleted: true
+                }
+            })
+
+            return {
+                data,
+                message: "Data restored",
                 status: HttpStatus.OK,
             }
         }catch(error){

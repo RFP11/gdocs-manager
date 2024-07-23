@@ -14,8 +14,9 @@ export class DocumentController {
     }
 
     @Get(':id')
-    document(@Param('id') documentsId:number, @Request() req){
-        return this.documentService.getDoc(documentsId, req.user.sub)
+    document(@Param('id') id, @Request() req){
+        if (id != Number) id = Number(id)
+        return this.documentService.getDoc(id, req.user.sub)
     }
 
 
@@ -25,12 +26,22 @@ export class DocumentController {
     }
 
     @Put(':id')
-    editDocs(@Param('id') documentId, @Request() req, @Body() data:DocumentDto){
-        return
+    editDocs(@Param('id') id, @Body() data:DocumentDto){
+        if (id != Number) id = Number(id)
+        return this.documentService.update(id, data)
     }
 
     @Delete(':id')
     deleteDocs(@Param('id') id){
+        if (id != Number) id = Number(id)
         return this.documentService.delete(id)
     }
+
+    @Put('restore/:id')
+    undeleteDocs(@Param('id') id){
+        if (id != Number) id = Number(id)
+        return this.documentService.undelete(id)
+    }
+
+    
 }
